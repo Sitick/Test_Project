@@ -12,11 +12,11 @@
 #include "task.h"
 
 // Определение портов и пинов строк и столбцов
-GPIO_TypeDef* Keyboard::rowPorts[KEYBOARD_ROWS] = {GPIOA, GPIOA, GPIOB}; // Порты строк (В качестве примера взяты: PA0, PA1, PB2)
-const uint8_t Keyboard::rowPins[KEYBOARD_ROWS] = {0, 1, 2};              // Пины строк (В качестве примера взяты: PA0, PA1, PB2)
+GPIO_TypeDef* Keyboard::row_Ports[KEYBOARD_ROWS] = {GPIOA, GPIOA, GPIOB}; // Порты строк (В качестве примера взяты: PA0, PA1, PB2)
+const uint8_t Keyboard::row_Pins[KEYBOARD_ROWS] = {0, 1, 2};              // Пины строк (В качестве примера взяты: PA0, PA1, PB2)
 
-GPIO_TypeDef* Keyboard::colPorts[KEYBOARD_COLS] = {GPIOA, GPIOB, GPIOB}; // Порты столбцов (В качестве примера взяты: PA3, PB4, PB5)
-const uint8_t Keyboard::colPins[KEYBOARD_COLS] = {3, 4, 5};              // Пины столбцов (В качестве примера взяты: PA3, PB4, PB5)
+GPIO_TypeDef* Keyboard::col_Ports[KEYBOARD_COLS] = {GPIOA, GPIOB, GPIOB}; // Порты столбцов (В качестве примера взяты: PA3, PB4, PB5)
+const uint8_t Keyboard::col_Pins[KEYBOARD_COLS] = {3, 4, 5};              // Пины столбцов (В качестве примера взяты: PA3, PB4, PB5)
 
 // Матрица кнопок в виде перечисления Keys
 const Keys Keyboard::keymap[KEYBOARD_ROWS][KEYBOARD_COLS] = {
@@ -26,7 +26,7 @@ const Keys Keyboard::keymap[KEYBOARD_ROWS][KEYBOARD_COLS] = {
 };
 
 
-Keyboard::Keyboard() : lastKey(INVALID) {
+Keyboard::Keyboard() : last_Key(INVALID) {
     keyboardInit();
 }
 
@@ -41,16 +41,16 @@ void Keyboard::keyboardInit() {
 
     // Настройка строк как входы без подтяжки (реализована аппаратно) с низкой скоростью переключения
     for (int i = 0; i < KEYBOARD_ROWS; ++i) {
-        rowPorts[i]->MODER &= ~(3 << (rowPins[i] * 2));     // Установка режима Input
-        rowPorts[i]->PUPDR &= ~(3 << (rowPins[i] * 2));     // без подтяжки Pull-Up/Down (реализуется аппаратно)
-        rowPorts[i]->OSPEEDR &= ~(3 << (rowPins[i] * 2));   // Установка низкой скорости переключения
+        row_Ports[i]->MODER &= ~(3 << (row_Pins[i] * 2));     // Установка режима Input
+        row_Ports[i]->PUPDR &= ~(3 << (row_Pins[i] * 2));     // без подтяжки Pull-Up/Down (реализуется аппаратно)
+        row_Ports[i]->OSPEEDR &= ~(3 << (row_Pins[i] * 2));   // Установка низкой скорости переключения
     }
 
     // Настройка столбцов как входы без подтяжки (реализована аппаратно) с низкой скоростью переключения
     for (int i = 0; i < KEYBOARD_COLS; ++i) {
-        colPorts[i]->MODER &= ~(3 << (colPins[i] * 2));     // Установка режима Input
-        colPorts[i]->PUPDR &= ~(3 << (colPins[i] * 2));     // без подтяжки Pull-Up/Down (реализуется аппаратно)
-        colPorts[i]->OSPEEDR &= ~(3 << (colPins[i] * 2));   // Установка низкой скорости переключения
+        col_Ports[i]->MODER &= ~(3 << (col_Pins[i] * 2));     // Установка режима Input
+        col_Ports[i]->PUPDR &= ~(3 << (col_Pins[i] * 2));     // без подтяжки Pull-Up/Down (реализуется аппаратно)
+        col_Ports[i]->OSPEEDR &= ~(3 << (col_Pins[i] * 2));   // Установка низкой скорости переключения
     }
 }
 
@@ -61,49 +61,50 @@ Keys Keyboard::getKey(uint8_t row, uint8_t col) {
 
 // Получение последней нажатой кнопки
 Keys Keyboard::keyboardGetKey() {
-    Keys key = lastKey;
-    lastKey = INVALID; // Сбрасываем значение после получения
+    Keys key = last_Key;
+    last_Key = INVALID; // Сбрасываем значение после получения
     return key;
 }
 
 // Опрос кнопок
 void Keyboard::keyboardPoll() {
-    TickType_t xLastWakeTime = xTaskGetTickCount(); // Получаем текущее время
-    Keys previousKey = INVALID; // Храним предыдущую обработанную кнопку (для корректной работы при долгом нажатии/ залипании кнопки)
+    TickType_t Last_Time;
+    Keys previous_Key = INVALID; // Храним предыдущую обработанную кнопку (для корректной работы при долгом нажатии/ залипании кнопки)
 
     while (1) {
-        bool keyFound = false;
+        Last_Time = xTaskGetTickCount(); // Получаем текущее время
+        bool key_Found = false;
 
         // Перебор строк клавиатуры
         for (int row = 0; row < KEYBOARD_ROWS; ++row) {
             // Опрос столбцов
             for (int col = 0; col < KEYBOARD_COLS; ++col) {
                 // Проверяем, равны ли строка и столбец логическому нулю
-                if (!(rowPorts[row]->IDR & (1 << rowPins[row])) &&
-                    !(colPorts[col]->IDR & (1 << colPins[col]))) {
+                if (!(row_Ports[row]->IDR & (1 << row_Pins[row])) &&
+                    !(col_Ports[col]->IDR & (1 << col_Pins[col]))) {
                     Keys key = getKey(row, col);
                     //  Защита от непредвиденных ситуаций
                     if (key == INVALID) {
                         continue;
                     }
 
-                    // Записываем кнопку в lastKey, только если она не совпадает с кнопкой, нажатой в предыдущем цикле (для корректной работы при долгом нажатии/ залипании кнопки)
+                    // Записываем кнопку в last_Key, только если она не совпадает с кнопкой, нажатой в предыдущем цикле (для корректной работы при долгом нажатии/ залипании кнопки)
                     // и только первую нажатую кнопку (на случай если пользователь нажмет несколько кнопок сразу)
-                    if (!keyFound && key != previousKey) {
-                        lastKey = key;
-                        previousKey = key;
-                        keyFound = true;
+                    if (!key_Found && key != previous_Key) {
+                        last_Key = key;
+                        previous_Key = key;
+                        key_Found = true;
                     }
                 }
             }
         }
 
-        // Сброс previousKey
-        if (!keyFound) {
-            previousKey = INVALID;
+        // Сброс previous_Key
+        if (!key_Found) {
+            previous_Key = INVALID;
         }
 
         // Задержка для опроса клавиш в 5 мс 
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5));
+        vTaskDelayUntil(&Last_Time, pdMS_TO_TICKS(5));
     }
 }
