@@ -26,10 +26,10 @@ public:
     Keys keyboardGetKey();                  // Получить последнюю нажатую кнопку
 
 private:
-    static GPIO_TypeDef* rowPorts[KEYBOARD_ROWS];           // Порты строк
-    static const uint8_t rowPins[KEYBOARD_ROWS];            // Пины строк
-    static GPIO_TypeDef* colPorts[KEYBOARD_COLS];           // Порты столбцов
-    static const uint8_t colPins[KEYBOARD_COLS];            // Пины столбцов
+    static GPIO_TypeDef* row_Ports[KEYBOARD_ROWS];           // Порты строк
+    static const uint8_t row_Pins[KEYBOARD_ROWS];            // Пины строк
+    static GPIO_TypeDef* col_Ports[KEYBOARD_COLS];           // Порты столбцов
+    static const uint8_t col_Pins[KEYBOARD_COLS];            // Пины столбцов
     static const Keys keymap[KEYBOARD_ROWS][KEYBOARD_COLS]; // Матрица клавиш
-    volatile Keys lastKey;                                  // Последняя нажатая кнопка
+    volatile Keys last_Key;                                  // Последняя нажатая кнопка
 };
